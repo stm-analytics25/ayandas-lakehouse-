@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ayanda's Lakehouse · i2core–i2dw Ontology</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#07080a; --surface:#0e1117; --raised:#161c26;
+  --border:#1e2736; --border2:#273348; --mist:#3a4d66;
+  --dim:#4e6280; --sub:#6e849e; --body:#a8b8cc;
+  --bright:#ccd8e4; --white:#e8eef5;
+  --gold:#f0b429; --gold-d:rgba(240,180,41,.15);
+  --cyan:#64d8fb; --cyan-d:rgba(100,216,251,.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--void);color:var(--body);font-family:'Space Grotesk',sans-serif;font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,.007) 3px,rgba(255,255,255,.007) 4px);pointer-events:none;z-index:9997;}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.brand{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--white);display:flex;align-items:center;gap:10px;letter-spacing:-.01em;}
+.brand em{font-style:italic;color:var(--gold);}
+.brand-divider{width:1px;height:20px;background:var(--border2);margin:0 4px;}
+.brand-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:.06em;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:4px 11px;border-radius:2px;border:1px solid var(--border2);color:var(--sub);}
+.chip.gold{border-color:rgba(240,180,41,.4);color:var(--gold);}
+.chip.cyan{border-color:rgba(100,216,251,.35);color:var(--cyan);}
+.btn-add-top{padding:7px 16px;background:var(--gold);color:var(--void);border:none;border-radius:3px;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.02em;transition:opacity .15s;}
+.btn-add-top:hover{opacity:.85;}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:268px 1fr;min-height:calc(100vh - 58px);}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:20px 0;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;display:flex;flex-direction:column;}
+.sb-sec{padding:0 16px 16px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.sb-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;padding-top:16px;display:block;}
+.search-wrap{background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:8px 12px;display:flex;align-items:center;gap:8px;}
+.search-wrap input{background:transparent;border:none;outline:none;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;width:100%;caret-color:var(--cyan);}
+.search-wrap input::placeholder{color:var(--dim);}
+
+/* domain nav */
+.d-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:4px;cursor:pointer;transition:all .12s;margin-bottom:2px;border:1px solid transparent;}
+.d-item:hover{background:var(--raised);}
+.d-item.active{background:var(--raised);border-color:var(--border2);}
+.d-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.d-label{font-size:12px;color:var(--body);flex:1;line-height:1.3;}
+.d-item.active .d-label{color:var(--white);}
+.d-cnt{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);background:var(--border);padding:2px 5px;border-radius:2px;min-width:22px;text-align:center;}
+
+/* analyst filter */
+.analyst-wrap{display:flex;flex-wrap:wrap;gap:5px;}
+.a-pill{font-size:11px;padding:4px 10px;border-radius:12px;border:1px solid var(--border);color:var(--sub);cursor:pointer;transition:all .15s;background:transparent;}
+.a-pill:hover{border-color:var(--border2);color:var(--body);}
+.a-pill.active{background:var(--gold-d);border-color:rgba(240,180,41,.5);color:var(--gold);}
+
+/* sidebar stats */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:0 16px 16px;}
+.stat{background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:11px;text-align:center;}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;line-height:1;}
+.stat-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);margin-top:3px;text-transform:uppercase;letter-spacing:.04em;}
+
+/* ── MAIN ── */
+.main{padding:28px 32px;background:var(--void);}
+.page-eye{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.page-eye::before{content:'';width:18px;height:1px;background:var(--border2);}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;color:var(--white);letter-spacing:-.01em;line-height:1.1;margin-bottom:6px;}
+.page-title em{font-style:italic;color:var(--gold);}
+.page-sub{font-size:13px;color:var(--sub);max-width:640px;line-height:1.7;margin-bottom:20px;}
+
+/* i2dw notice */
+.lineage-notice{background:rgba(240,180,41,.07);border:1px solid rgba(240,180,41,.2);border-radius:6px;padding:12px 16px;font-size:12px;color:var(--gold);line-height:1.7;margin-bottom:24px;}
+.lineage-notice strong{color:var(--white);}
+
+/* ── DOMAIN SECTION ── */
+.ds{margin-bottom:28px;}
+.ds-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.ds-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.ds-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--white);}
+.ds-sub{font-size:11px;color:var(--sub);margin-left:2px;}
+.ds-badge{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 9px;border-radius:2px;border:1px solid var(--border2);color:var(--dim);}
+.ds-i2dw{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 9px;border-radius:2px;border:1px solid rgba(240,180,41,.3);color:var(--gold);background:rgba(240,180,41,.06);}
+
+/* ── TABLE CARDS ── */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px;}
+.tcard{background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s;display:flex;flex-direction:column;}
+.tcard:hover{border-color:var(--border2);transform:translateY(-1px);}
+.tcard.i2dw-derived{border-top:2px solid rgba(240,180,41,.5);}
+.tcard.missing-flag{border:1px solid rgba(220,80,80,.4);background:rgba(220,80,80,.04);}
+.tcard-head{padding:11px 14px 9px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:9px;}
+.tcard-icon{width:26px;height:26px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;flex-shrink:0;margin-top:1px;}
+.tcard-info{flex:1;min-width:0;}
+.tcard-dbpath{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);margin-bottom:2px;}
+.tcard-name{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tcard-i2dw-badge{font-family:'JetBrains Mono',monospace;font-size:8px;padding:1px 6px;border-radius:2px;background:rgba(240,180,41,.12);color:var(--gold);border:1px solid rgba(240,180,41,.25);margin-left:auto;white-space:nowrap;flex-shrink:0;margin-top:4px;}
+.tcard-body{padding:10px 14px;flex:1;}
+.tcard-desc{font-size:12px;color:var(--sub);line-height:1.5;margin-bottom:7px;}
+.tcard-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px;}
+.tag{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:2px;border:1px solid var(--border);color:var(--dim);}
+.tcard-gold{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--cyan);display:flex;align-items:center;gap:5px;opacity:.85;}
+.tcard-gold::before{content:'→';opacity:.4;}
+.tcard-foot{padding:8px 14px;background:var(--raised);border-top:1px solid var(--border);display:flex;gap:5px;flex-wrap:wrap;}
+.col-chip{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 5px;border-radius:2px;background:var(--border);color:var(--sub);}
+
+/* analyst owner badge */
+.analyst-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--gold-d);color:var(--gold);border:1px solid rgba(240,180,41,.3);font-weight:500;white-space:nowrap;}
+.missing-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(220,60,60,.15);color:#f87171;border:1px solid rgba(220,60,60,.3);font-weight:500;}
+
+/* ── DETAIL PANEL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;display:flex;justify-content:flex-end;}
+.overlay.hidden{display:none;}
+.dp{background:var(--surface);border-left:1px solid var(--border);width:500px;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+.dp-head{padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--surface);z-index:10;}
+.dp-close{width:28px;height:28px;border:1px solid var(--border2);border-radius:3px;background:transparent;color:var(--sub);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;}
+.dp-close:hover{color:var(--white);border-color:var(--mist);}
+.dp-db{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:4px;}
+.dp-name{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:500;color:var(--white);}
+.dp-body{padding:18px 22px;flex:1;}
+.dp-sec{margin-bottom:20px;}
+.dp-sec-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.dp-sec-lbl::after{content:'';flex:1;height:1px;background:var(--border);}
+.dp-desc{font-size:13px;color:var(--body);line-height:1.7;}
+.dp-col{background:var(--raised);border:1px solid var(--border);border-radius:3px;padding:8px 12px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;margin-bottom:4px;}
+.dp-col-n{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--bright);}
+.dp-col-t{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);}
+.dp-col-d{font-size:11px;color:var(--sub);margin-top:2px;grid-column:1/-1;}
+.sql-block{background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--body);line-height:1.8;overflow-x:auto;white-space:pre;}
+.sql-kw{color:var(--cyan);}
+.sql-tbl{color:#a78bfa;}
+.sql-cmt{color:var(--dim);font-style:italic;}
+.gold-box{background:rgba(100,216,251,.06);border:1px solid rgba(100,216,251,.2);border-radius:4px;padding:11px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan);line-height:1.8;}
+.lineage-box{background:rgba(240,180,41,.07);border:1px solid rgba(240,180,41,.25);border-radius:4px;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);line-height:2;}
+.lineage-box .proc{color:var(--white);font-weight:500;}
+.rel-item{background:var(--raised);border:1px solid var(--border);border-radius:3px;padding:8px 12px;font-size:12px;color:var(--body);display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.rel-arrow{color:var(--mist);font-family:'JetBrains Mono',monospace;font-size:11px;}
+.btn-copy{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 9px;background:transparent;border:1px solid var(--border2);border-radius:3px;color:var(--sub);cursor:pointer;transition:all .15s;margin-left:auto;}
+.btn-copy:hover{color:var(--white);border-color:var(--mist);}
+.btn-copy.copied{color:var(--cyan);border-color:rgba(100,216,251,.4);}
+
+/* ── REGISTER MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-bg.hidden{display:none;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:8px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.4);}
+.modal-head{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--white);}
+.modal-sub{font-size:12px;color:var(--sub);margin-top:2px;}
+.modal-body{padding:20px 24px;}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.fg label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--sub);}
+.fg-req{color:#f87171;}
+.fg input,.fg select,.fg textarea{background:var(--raised);border:1px solid var(--border);border-radius:3px;padding:9px 12px;color:var(--white);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;transition:border-color .15s;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--gold);}
+.fg select option{background:var(--surface);}
+.fg textarea{resize:vertical;min-height:70px;}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.modal-info{background:rgba(240,180,41,.07);border:1px solid rgba(240,180,41,.2);border-radius:4px;padding:10px 14px;font-size:11px;color:var(--gold);line-height:1.7;margin-bottom:14px;}
+.modal-foot{padding:14px 24px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+.btn-cancel{padding:9px 18px;border:1px solid var(--border2);border-radius:3px;background:transparent;color:var(--sub);font-family:'Space Grotesk',sans-serif;font-size:13px;cursor:pointer;}
+.btn-cancel:hover{color:var(--white);}
+.btn-submit{padding:9px 22px;background:var(--gold);color:var(--void);border:none;border-radius:3px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+.btn-submit:hover{opacity:.85;}
+
+/* ── REGISTRY PANEL ── */
+.reg-panel{background:var(--surface);border:1px solid var(--border);border-radius:6px;margin-bottom:24px;overflow:hidden;}
+.reg-head{background:var(--raised);border-bottom:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;}
+.reg-title{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--white);}
+.reg-row{display:grid;grid-template-columns:130px 160px 1fr 90px 100px;gap:10px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--border);font-size:12px;}
+.reg-row:last-child{border-bottom:none;}
+.reg-row:hover{background:var(--raised);}
+.reg-table{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--bright);}
+.reg-analyst{font-size:11px;color:var(--gold);}
+.reg-status{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 8px;border-radius:2px;}
+.rs-missing{background:rgba(220,60,60,.15);color:#f87171;border:1px solid rgba(220,60,60,.3);}
+.rs-pending{background:rgba(240,180,41,.12);color:var(--gold);border:1px solid rgba(240,180,41,.3);}
+.rs-mapped{background:rgba(100,216,251,.1);color:var(--cyan);border:1px solid rgba(100,216,251,.25);}
+
+.toast{position:fixed;bottom:20px;right:20px;background:var(--raised);border:1px solid rgba(240,180,41,.4);color:var(--gold);padding:11px 18px;border-radius:4px;font-size:13px;z-index:999;opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s;pointer-events:none;max-width:320px;}
+.toast.show{opacity:1;transform:none;}
+
+/* ── OPERATING MODEL ── */
+.op-pill{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:2px;border:1px solid rgba(240,180,41,.25);background:rgba(240,180,41,.07);color:var(--gold);margin-top:5px;}
+.op-item{display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border-radius:4px;cursor:pointer;transition:all .12s;margin-bottom:2px;border:1px solid transparent;}
+.op-item:hover{background:var(--raised);}
+.op-item.active{background:var(--raised);border-color:rgba(240,180,41,.3);}
+.op-item-label{font-size:11px;color:var(--sub);flex:1;line-height:1.4;}
+.op-item.active .op-item-label{color:var(--gold);}
+.op-item-cnt{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);background:var(--border);padding:2px 5px;border-radius:2px;flex-shrink:0;white-space:nowrap;}
+.op-banner{display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(240,180,41,.05);border:1px solid rgba(240,180,41,.15);border-radius:4px;margin-bottom:14px;font-size:12px;color:var(--gold);}
+.op-banner-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(240,180,41,.45);white-space:nowrap;}
+.op-detail-box{background:rgba(240,180,41,.06);border:1px solid rgba(240,180,41,.2);border-radius:4px;padding:11px 14px;font-size:12px;color:var(--gold);line-height:1.7;}
+.op-view-toggle{display:flex;gap:4px;background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:3px;margin-bottom:16px;}
+.op-view-btn{flex:1;padding:6px 10px;border:none;background:transparent;color:var(--sub);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em;cursor:pointer;border-radius:3px;transition:all .15s;}
+.op-view-btn.active{background:var(--surface);color:var(--white);border:1px solid var(--border2);}
+.op-group{margin-bottom:28px;}
+.op-group-head{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--gold);margin-bottom:14px;padding:10px 0 10px;border-bottom:1px solid rgba(240,180,41,.2);display:flex;align-items:center;justify-content:space-between;}
+.op-group-cnt{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+@media(max-width:860px){.app{grid-template-columns:1fr;}.sidebar{position:static;height:auto;}.dp{width:100vw;}.fgrid,.fgrid3{grid-template-columns:1fr;}.tgrid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <em>Ayanda's</em> Lakehouse
+    <div class="brand-divider"></div>
+    <span class="brand-sub">i2core · i2dw ontology</span>
+  </div>
+  <div class="topbar-right">
+    <span class="chip gold">9 analysts migrating</span>
+    <span class="chip cyan">2026 parquet ingested</span>
+    <button class="btn-add-top" onclick="openModal()">+ I used this table</button>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-sec">
+      <span class="sb-lbl">Search</span>
+      <div class="search-wrap">
+        <span style="color:var(--dim);font-size:14px">⌕</span>
+        <input type="text" id="searchInput" placeholder="Table, column, tag…" oninput="filterTables(this.value)">
+      </div>
+    </div>
+
+    <div class="sb-sec">
+      <span class="sb-lbl">Filter by who submitted</span>
+      <div class="analyst-wrap" id="analystWrap"></div>
+    </div>
+
+    <div class="sb-sec">
+      <span class="sb-lbl">Operating model</span>
+      <div id="opNav"></div>
+    </div>
+
+    <div class="sb-sec">
+      <span class="sb-lbl">Domain</span>
+      <div id="domainNav"></div>
+    </div>
+
+    <div class="stat-grid" id="statGrid"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="page-eye">Source system ontology · 2026</div>
+    <div class="page-title"><em>Ayanda's</em> Lakehouse — Table Map</div>
+    <p class="page-sub">All 37 source tables from i2core and i2dw, grouped by domain. i2dw tables are <strong style="color:var(--gold)">derived from i2core</strong> via SQL Server jobs, SSIS packages and stored procedures — lineage is documented on each card. If you used a table in the old system that isn't here yet, click <strong style="color:var(--gold)">"I used this table"</strong> to register it for migration into the Lakehouse.</p>
+
+    <div class="op-view-toggle">
+      <button class="op-view-btn active" id="vbtn-domain" onclick="setView('domain')">By domain</button>
+      <button class="op-view-btn" id="vbtn-opmodel" onclick="setView('opmodel')">By operating model</button>
+    </div>
+
+    <div class="lineage-notice">
+      <strong>i2dw derivation rule:</strong> Any table in <code style="color:var(--white)">i2dw.dbo.*</code> is a downstream transform of one or more <code style="color:var(--white)">i2core.dbo.*</code> tables.
+      Each card shows the SQL Server Agent job, SSIS package or stored procedure responsible. If the ETL artefact is unknown, analysts can flag it in the registry below.
+    </div>
+
+    <!-- REGISTRY TABLE -->
+    <div class="reg-panel" id="registryPanel">
+      <div class="reg-head">
+        <span class="reg-title">Tables requested for migration</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim)" id="regCount">0 submissions</span>
+      </div>
+      <div id="regBody"><div style="padding:16px 18px;font-size:12px;color:var(--dim)">No missing tables registered yet. Use the button above to add one.</div></div>
+    </div>
+
+    <div id="domainSections"></div>
+  </main>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="overlay hidden" id="detailOverlay" onclick="handleOvClick(event)">
+  <div class="dp">
+    <div class="dp-head">
+      <div>
+        <div class="dp-db" id="dp-db"></div>
+        <div class="dp-name" id="dp-name"></div>
+      </div>
+      <button class="dp-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="dp-body" id="dp-body"></div>
+  </div>
+</div>
+
+<!-- REGISTER MODAL -->
+<div class="modal-bg hidden" id="modalBg" onclick="handleModalClick(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">I used this table in the old system</div>
+        <div class="modal-sub">Register a table from i2core or i2dw that you need migrated to Ayanda's Lakehouse</div>
+      </div>
+      <button class="dp-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-info">Fields marked <span style="color:#f87171">✱</span> are required. The admin team will review your submission and either map your table to an existing Gold table or ingest it from the source system.</div>
+      <div class="fgrid" style="margin-bottom:12px">
+        <div class="fg">
+          <label>Table name <span class="fg-req">✱</span></label>
+          <input type="text" id="f-table" placeholder="e.g. i2core.dbo.MemDiagHist">
+        </div>
+        <div class="fg">
+          <label>Source database <span class="fg-req">✱</span></label>
+          <select id="f-db">
+            <option value="">Select…</option>
+            <option>i2core.dbo</option>
+            <option>i2dw.dbo</option>
+            <option>Other — specify in notes</option>
+          </select>
+        </div>
+      </div>
+      <div class="fgrid3" style="margin-bottom:12px">
+        <div class="fg">
+          <label>Who are you? <span class="fg-req">✱</span></label>
+          <select id="f-analyst">
+            <option value="">Select…</option>
+            <option>Monique</option><option>Maryanne</option><option>Julius</option>
+            <option>Felicia</option><option>Bridgette</option><option>Godfrey</option>
+            <option>Thabo</option><option>Ncumisa</option><option>Samuel</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Domain <span class="fg-req">✱</span></label>
+          <select id="f-domain">
+            <option value="">Select…</option>
+            <option>Membership</option><option>Claims (RAMS)</option>
+            <option>Case Management (HBM)</option><option>ADRM</option>
+            <option>Pharmacy (IPBM)</option><option>Clinical Governance</option>
+            <option>Treatment Plans</option><option>Hospital Groups</option>
+            <option>Wellness / Benefits</option><option>Other</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Approx row count</label>
+          <input type="text" id="f-rows" placeholder="e.g. 2M">
+        </div>
+      </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label>Key columns you used in your reports</label>
+        <input type="text" id="f-cols" placeholder="e.g. BenfcCode, DiagCode, EffDate, AmtPaid">
+      </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label>What did you use this table for? <span class="fg-req">✱</span></label>
+        <textarea id="f-usage" placeholder="e.g. Chronic diagnosis history report, member risk stratification, year-on-year PMPM trend…"></textarea>
+      </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label>Gold table mapping — where do you think this lives now?</label>
+        <select id="f-gold">
+          <option value="">Not sure — admin will map it</option>
+          <option>membership.gold.beneficiary</option>
+          <option>hospital.gold.authorisations</option>
+          <option>risk.gold.programme_enrolments</option>
+          <option>clinical.gold.oncology_plans</option>
+          <option>claims.gold.adjudicated_claims</option>
+          <option>claims.gold.financial_records</option>
+          <option>provider.gold.provider_registry</option>
+          <option>recon.shared.run_log</option>
+          <option>Needs new Gold table</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>ETL artefact (if you know how it was built)</label>
+        <input type="text" id="f-etl" placeholder="e.g. SSIS: LoadDW_Claims.dtsx · Job: DW_Daily_Load · SP: usp_BuildClaimsDW">
+      </div>
+      <div class="fg" style="margin-top:10px">
+        <label>Anything else the admin team should know?</label>
+        <textarea id="f-notes" placeholder="Date ranges, partitions, joins you relied on, related tables, refresh frequency…"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-submit" onclick="submitMissing()">Submit — I used this table</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ANALYSTS = ['Monique','Maryanne','Julius','Felicia','Bridgette','Godfrey','Thabo','Ncumisa','Samuel'];
+
+// i2dw lineage knowledge base
+const I2DW_LINEAGE = {
+  'Claims': {
+    job: 'SQL Agent Job: DW_Claims_Daily_Load',
+    package: 'SSIS: ETL_Claims_i2core_to_i2dw.dtsx',
+    proc: 'usp_Build_DW_Claims',
+    schedule: 'Daily 02:00 SAST',
+    source_tables: ['i2core.dbo.Clm','i2core.dbo.ClmLine','i2core.dbo.ClmPmtLine'],
+    notes: 'Joins Clm + ClmLine + ClmPmtLine, flattens to one row per claim. Adds SchmCode, ProdCode, PracType denormalisations.'
+  },
+  'MedsCompliance': {
+    job: 'SQL Agent Job: IPBM_Compliance_Calc',
+    package: 'SSIS: ETL_IPBM_Compliance.dtsx',
+    proc: 'usp_Calc_MedsCompliance',
+    schedule: 'Weekly Sunday 03:00 SAST',
+    source_tables: ['i2core.dbo.ClmLine (NAPPI lines)','i2dw.dbo.IPBM_Members'],
+    notes: 'Filters ClmLine WHERE ServTypeCode = M (medicine/NAPPI). Computes MPR per BenfcCode per NappiCode. References IPBM_Members for chronic eligibility.'
+  },
+  'IPBM_Authorisation': {
+    job: 'SQL Agent Job: IPBM_Auth_Sync',
+    package: 'SSIS: ETL_IPBM_Auth.dtsx',
+    proc: 'usp_Sync_IPBM_Auth',
+    schedule: 'Daily 01:30 SAST',
+    source_tables: ['i2core.dbo.CaseBenfcCaseMan','i2core.dbo.CaseAuthTypeMast'],
+    notes: 'Filters CaseBenfcCaseMan for pharmacy auth type codes. Pivots to IPBM format. Auth status is mapped from CaseStatusMast.'
+  },
+  'IPBM_Claims': {
+    job: 'SQL Agent Job: IPBM_Claims_Daily',
+    package: 'SSIS: ETL_IPBM_Claims.dtsx',
+    proc: 'usp_Build_IPBM_Claims',
+    schedule: 'Daily 02:15 SAST',
+    source_tables: ['i2core.dbo.ClmLine','i2dw.dbo.IPBM_Authorisation'],
+    notes: 'Joins ClmLine (ServTypeCode = M) with IPBM_Authorisation on BenfcCode + NappiCode. Adds dispensing pharmacy from PracNum lookup.'
+  },
+  'IPBM_Members': {
+    job: 'SQL Agent Job: IPBM_Member_Sync',
+    package: 'SSIS: ETL_IPBM_Members.dtsx',
+    proc: 'usp_Sync_IPBM_Members',
+    schedule: 'Daily 01:00 SAST',
+    source_tables: ['i2core.dbo.CHFData','i2core.dbo.BenfcCriteria'],
+    notes: 'Starts from CHFData (active members). Joins BenfcCriteria to flag ChronicFlag. Applies formulary lookup from ProgMast.'
+  },
+  'ParacPracGrpProd_Dedup2': {
+    job: 'SQL Agent Job: DW_PracGrp_Dedup',
+    package: 'SSIS: ETL_PracGrp_Dedup.dtsx',
+    proc: 'usp_Build_PracGrpProd_Dedup2',
+    schedule: 'Monthly 1st 04:00 SAST',
+    source_tables: ['i2core.dbo.PracGrpMast','i2core.dbo.Clm','i2core.dbo.Prod'],
+    notes: 'Deduplicates practice-group-product assignments. Resolves many-to-many between a practice and multiple groups/products. Version 2 of the view fixes double-counting.'
+  },
+  'CondMast': {
+    job: 'SQL Agent Job: DW_RefData_Sync',
+    package: 'SSIS: ETL_RefData_i2core_to_i2dw.dtsx',
+    proc: 'usp_Sync_CondMast_DW',
+    schedule: 'Weekly Saturday 02:00 SAST',
+    source_tables: ['i2core.dbo.CriteriaMast','i2core.dbo.BenfcStatDisorder'],
+    notes: 'Derives CondMast by joining CriteriaMast (ICD10Code) with BenfcStatDisorder (Char4Code). Adds PMBFlag from CMS PMB code lookup table. ChronicFlag is set when ProgMast has an active ADRM programme for that ICD10.'
+  },
+};
+
+const DOMAINS = [
+  // ── op: operating model capability this domain serves
+  {id:'membership',label:'Membership',color:'#3b82f6',
+   op:'Membership management and enrollment',opId:'membership-mgmt',
+   tables:[
+    {db:'i2core.dbo',name:'CHFData',desc:'Primary member/beneficiary table. Central node linking all clinical activity to a covered life. Contains scheme, option, product assignment and demographics.',cols:[{n:'BenfcCode',t:'VARCHAR',d:'Unique beneficiary code — PK'},{n:'SchmCode',t:'VARCHAR',d:'Scheme code'},{n:'ProdCode',t:'VARCHAR',d:'Product / option code'},{n:'BenfcStatCode',t:'VARCHAR',d:'Beneficiary status'},{n:'DOB',t:'DATE',d:'Date of birth'},{n:'Gender',t:'CHAR(1)',d:'M/F/U'},{n:'EffDate',t:'DATE',d:'Effective date'},{n:'BenfcType',t:'VARCHAR',d:'Principal / dependant'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.CHFData c',gold:'membership.gold.beneficiary',relations:['CHFData.BenfcCode → ClmLine.BenfcCode','CHFData.BenfcCode → CaseBenfcCaseMan.BenfcCode','CHFData.BenfcCode → BenfcCriteria.BenfcCode'],tags:['member','beneficiary','demographics','scheme']},
+  ]},
+  {id:'wellness',label:'Wellness / Benefits',color:'#06b6d4',
+   op:'Clinical decision support and care management',opId:'clinical-decision',
+   tables:[
+    {db:'i2core.dbo',name:'BenfcCriteria',desc:'Benefit criteria assigned to beneficiaries — used for wellness and chronic programme eligibility. whatsDoc API also writes pathology-triggered criteria to this table.',cols:[{n:'BenfcCode',t:'VARCHAR',d:'Beneficiary reference'},{n:'CritCode',t:'VARCHAR',d:'Criteria code'},{n:'EffDate',t:'DATE',d:'Effective date'},{n:'EndDate',t:'DATE',d:'End date'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.BenfcCriteria',gold:'clinical.gold.enrolments',relations:['BenfcCriteria.CritCode → CriteriaMast.CritCode','BenfcCriteria.BenfcCode → CHFData.BenfcCode'],tags:['benefit','eligibility','criteria','whatsDoc']},
+    {db:'i2core.dbo',name:'CriteriaCatMast',desc:'Category master for benefit criteria. Classifies criteria into wellness, chronic, oncology and clinical categories.',cols:[{n:'CritCatCode',t:'VARCHAR',d:'Category code (PK)'},{n:'CritCatDescr',t:'VARCHAR',d:'Category description'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.CriteriaCatMast',gold:'ontology.shared.master_codes',relations:['CriteriaCatMast.CritCatCode → CriteriaMast.CritCatCode'],tags:['reference','master','category']},
+    {db:'i2core.dbo',name:'BenfcCriteriaNotes',desc:'Free-text clinical notes on a benefit criteria record. Used by case managers and wellness providers to document motivation.',cols:[{n:'BenfcCode',t:'VARCHAR',d:'Beneficiary reference'},{n:'CritCode',t:'VARCHAR',d:'Criteria code'},{n:'NoteDate',t:'DATETIME',d:'Note date'},{n:'NoteText',t:'TEXT',d:'Free text note'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.BenfcCriteriaNotes',gold:'clinical.gold.documents',relations:['BenfcCriteriaNotes.BenfcCode → CHFData.BenfcCode'],tags:['notes','clinical','text']},
+    {db:'i2core.dbo',name:'CriteriaMast',desc:'Master criteria definitions with category, description and ICD-10 linkage. Defines all benefit eligibility rules.',cols:[{n:'CritCode',t:'VARCHAR',d:'Criteria code (PK)'},{n:'CritCatCode',t:'VARCHAR',d:'Category FK'},{n:'CritDescr',t:'VARCHAR',d:'Description'},{n:'ICD10Code',t:'VARCHAR',d:'Linked ICD-10 code'}],sql:'SELECT *\nFROM i2core.dbo.CriteriaMast',gold:'ontology.shared.dmp_conditions',relations:['CriteriaMast.ICD10Code → ClmLine.DiagCode'],tags:['master','reference','ICD10']},
+  ]},
+  {id:'claims',label:'Claims (RAMS)',color:'#0e7490',
+   op:'Clinical claims adjudication',opId:'claims-adj',
+   tables:[
+    {db:'i2core.dbo',name:'Clm',desc:'Claims header — one row per submission. Links member, provider, scheme and fund. ServTypeCode on ClmLine identifies RAMS category: R=Room, A=Administration, M=Medicine/NAPPI, S=Service.',cols:[{n:'ClmNum',t:'VARCHAR',d:'Claim number (PK)'},{n:'BenfcCode',t:'VARCHAR',d:'Member reference'},{n:'PracNum',t:'VARCHAR',d:'Practice number'},{n:'SchmCode',t:'VARCHAR',d:'Scheme code'},{n:'ProdCode',t:'VARCHAR',d:'Product code'},{n:'SubmDate',t:'DATE',d:'Submission date'},{n:'ClmStatus',t:'VARCHAR',d:'Status'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.Clm',gold:'claims.gold.adjudicated_claims',relations:['Clm.ClmNum → ClmLine.ClmNum','Clm.BenfcCode → CHFData.BenfcCode'],tags:['claims','header','RAMS']},
+    {db:'i2core.dbo',name:'ClmLine',desc:'Claim line items — one row per service. NAPPI lines (ServTypeCode=M) carry active ingredient, strength, dosage form and pack size. Billing rule checks (5790+5791+5792, 1205 ICU sequence) apply at this level.',cols:[{n:'ClmNum',t:'VARCHAR',d:'Claim FK'},{n:'ClmLineNum',t:'INT',d:'Line sequence'},{n:'BenfcCode',t:'VARCHAR',d:'Member reference'},{n:'ServDate',t:'DATETIME',d:'Date of service'},{n:'ServTypeCode',t:'VARCHAR',d:'RAMS type: R/A/M/S'},{n:'ServTrfCode',t:'VARCHAR',d:'Tariff or NAPPI code'},{n:'ServTrfDescr',t:'VARCHAR',d:'Description'},{n:'Units',t:'DECIMAL',d:'Units claimed'},{n:'AmtClaimed',t:'MONEY',d:'Amount claimed'},{n:'AmtPaid',t:'MONEY',d:'Amount paid'},{n:'DiagCode',t:'VARCHAR',d:'ICD-10'}],sql:"SELECT ServTypeCode, ServTrfDescr,\n  COUNT(ClmNum) AS clm_count\nFROM i2core.dbo.ClmLine\nWHERE CONVERT(DATE,ServDate,111) >= '2025-12-01'\n  AND CONVERT(DATE,ServDate,111) < '2025-12-02'\nGROUP BY ServTypeCode, ServTrfDescr",gold:'claims.gold.adjudicated_claims',relations:['ClmLine.ClmNum → Clm.ClmNum','ClmLine.ServTrfCode → ontology.master_codes'],tags:['RAMS','NAPPI','tariff','ICD10','line']},
+    {db:'i2core.dbo',name:'ClmPmtLine',desc:'Payment detail per claim line — paid amount, payment date, fund settlement and payment reference.',cols:[{n:'ClmNum',t:'VARCHAR',d:'Claim FK'},{n:'ClmLineNum',t:'INT',d:'Line FK'},{n:'PmtDate',t:'DATE',d:'Payment date'},{n:'AmtPaid',t:'MONEY',d:'Amount paid'},{n:'FundCode',t:'VARCHAR',d:'Fund code'},{n:'PmtRef',t:'VARCHAR',d:'Payment reference'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.ClmPmtLine',gold:'claims.gold.financial_records',relations:['ClmPmtLine.ClmNum → Clm.ClmNum'],tags:['payment','financial','settlement']},
+    {db:'i2dw.dbo',name:'Claims',desc:'Dimensional claims view — pre-aggregated and cleansed for reporting. Derived by SSIS from i2core.Clm + ClmLine + ClmPmtLine. Adds denormalised SchmCode, ProdCode, PracType for slice-and-dice BI reports.',cols:[{n:'ClmNum',t:'VARCHAR',d:'Claim reference'},{n:'SchmCode',t:'VARCHAR',d:'Scheme code'},{n:'ProdCode',t:'VARCHAR',d:'Product code'},{n:'PracType',t:'VARCHAR',d:'Practice type'},{n:'ClmDate',t:'DATE',d:'Claim date'},{n:'AmtPaid',t:'MONEY',d:'Paid amount'}],sql:'SELECT TOP 10 *\nFROM i2dw.dbo.Claims c\n-- group by SchmCode,ProdCode,PracType',gold:'claims.gold.adjudicated_claims',relations:['i2dw.Claims ← i2core.Clm + ClmLine + ClmPmtLine'],tags:['DW','reporting','BI','derived'],i2dw:true},
+  ]},
+  {id:'casemanagement',label:'Case Management (HBM)',color:'#dc2626',
+   op:'Hospital benefit management',opId:'hospital-benefit',
+   tables:[
+    {db:'i2core.dbo',name:'CaseBenfcCaseMan',desc:'Core case management record. HBM episodes, PA decisions, case manager assignments. Source for authorisations Gold table. Also used in pathology context for whatsDoc API push.',cols:[{n:'CaseNum',t:'VARCHAR',d:'Case number (PK)'},{n:'BenfcCode',t:'VARCHAR',d:'Member reference'},{n:'CaseStatCode',t:'VARCHAR',d:'Status code'},{n:'CaseAuthTypeCode',t:'VARCHAR',d:'Auth type'},{n:'OpenDate',t:'DATE',d:'Opened'},{n:'CloseDate',t:'DATE',d:'Closed'},{n:'CaseMgrCode',t:'VARCHAR',d:'Case manager'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.CaseBenfcCaseMan',gold:'hospital.gold.authorisations',relations:['CaseBenfcCaseMan.BenfcCode → CHFData.BenfcCode','CaseBenfcCaseMan.CaseNum → CaseBenfcProcDiag.CaseNum'],tags:['case','HBM','auth','episode']},
+    {db:'i2core.dbo',name:'CaseStatusMast',desc:'Master status codes for case management — open, pending, closed, cancelled, escalated.',cols:[{n:'CaseStatCode',t:'VARCHAR',d:'Status code (PK)'},{n:'CaseStatDescr',t:'VARCHAR',d:'Description'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.CaseStatusMast',gold:'ontology.shared.auth_types',relations:['CaseStatusMast → CaseBenfcCaseMan'],tags:['master','status','reference']},
+    {db:'i2core.dbo',name:'CaseAuthTypeMast',desc:'Authorisation type master — distinguishes hospital admissions, day procedures, specialised medicine and other PA categories.',cols:[{n:'CaseAuthTypeCode',t:'VARCHAR',d:'Auth type (PK)'},{n:'CaseAuthTypeDescr',t:'VARCHAR',d:'Description'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.CaseAuthTypeMast',gold:'ontology.shared.auth_types',relations:['CaseAuthTypeMast → CaseBenfcCaseMan'],tags:['master','auth','type']},
+    {db:'i2core.dbo',name:'CaseAuthCatMast',desc:'Auth category master — groups auth types into elective, emergency, planned, chronic.',cols:[{n:'CaseAuthCatCode',t:'VARCHAR',d:'Category (PK)'},{n:'CaseAuthCatDescr',t:'VARCHAR',d:'Description'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.CaseAuthCatMast',gold:'ontology.shared.auth_types',relations:['CaseAuthCatMast → CaseAuthTypeMast'],tags:['master','category','auth']},
+    {db:'i2core.dbo',name:'CaseBenfcProcDiag',desc:'Procedure and diagnosis codes per case — ICD-10 and CPT4/tariff codes attached to a case managed episode.',cols:[{n:'CaseNum',t:'VARCHAR',d:'Case FK'},{n:'DiagCode',t:'VARCHAR',d:'ICD-10'},{n:'ProcCode',t:'VARCHAR',d:'CPT4/tariff'},{n:'SeqNum',t:'INT',d:'Sequence'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.CaseBenfcProcDiag',gold:'hospital.gold.authorisations',relations:['CaseBenfcProcDiag.CaseNum → CaseBenfcCaseMan.CaseNum'],tags:['ICD10','CPT4','procedure']},
+    {db:'i2core.dbo',name:'CaseCPT4',desc:'CPT4 procedure code master used in PA decisions.',cols:[{n:'CPT4Code',t:'VARCHAR',d:'CPT4 (PK)'},{n:'CPT4Descr',t:'VARCHAR',d:'Description'},{n:'CPT4Cat',t:'VARCHAR',d:'Category'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.CaseCPT4',gold:'ontology.shared.master_codes',relations:['CaseCPT4 → CaseBenfcProcDiag'],tags:['CPT4','procedure','master']},
+  ]},
+  {id:'hospital',label:'Hospital Groups',color:'#f59e0b',
+   op:'Provider network management',opId:'provider-network',
+   tables:[
+    {db:'i2dw.dbo',name:'ParacPracGrpProd_Dedup2',desc:'Deduplicated practice-group-product linkage. Version 2 fixes double-counting from v1. Created monthly by SSIS from PracGrpMast + Clm + Prod joins.',cols:[{n:'PracNum',t:'VARCHAR',d:'Practice number'},{n:'PracGrpCode',t:'VARCHAR',d:'Group code'},{n:'ProdCode',t:'VARCHAR',d:'Product code'},{n:'SchmCode',t:'VARCHAR',d:'Scheme code'}],sql:'SELECT TOP 10 *\nFROM i2dw.dbo.ParacPracGrpProd_Dedup2',gold:'provider.gold.provider_registry',relations:['i2dw.ParacPracGrpProd_Dedup2 ← i2core.PracGrpMast + Clm + Prod'],tags:['hospital','group','dedup','derived'],i2dw:true},
+    {db:'i2core.dbo',name:'PracGrpMast',desc:'Practice group master — hospital groups (Netcare, Life, Mediclinic, State) and constituent practices.',cols:[{n:'PracGrpCode',t:'VARCHAR',d:'Group code (PK)'},{n:'PracGrpDescr',t:'VARCHAR',d:'Group name'},{n:'PracGrpType',t:'VARCHAR',d:'Public/private'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.PracGrpMast',gold:'provider.gold.provider_registry',relations:['PracGrpMast → ParacPracGrpProd_Dedup2'],tags:['hospital','group','master']},
+    {db:'i2core.dbo',name:'Prod',desc:'Product/benefit option master. Defines all scheme products and benefit structures.',cols:[{n:'SchmCode',t:'VARCHAR',d:'Scheme code'},{n:'ProdCode',t:'VARCHAR',d:'Product (PK)'},{n:'ProdDescr',t:'VARCHAR',d:'Description'},{n:'ProdType',t:'VARCHAR',d:'Type'}],sql:'SELECT *\nFROM i2core.dbo.Prod',gold:'membership.gold.beneficiary',relations:['Prod.ProdCode → CHFData.ProdCode'],tags:['product','scheme','benefit']},
+  ]},
+  {id:'adrm',label:'ADRM (AI Risk Mgmt)',color:'#d97706',
+   op:'Disease and risk management programs',opId:'disease-risk',
+   tables:[
+    {db:'i2core.dbo',name:'MemProg',desc:'Member programme enrolment. AI-driven ADRM enrols members into disease risk programmes based on claims patterns. ProgCode identifies the clinical programme.',cols:[{n:'BenfcCode',t:'VARCHAR',d:'Member reference'},{n:'ProgCode',t:'VARCHAR',d:'Programme code'},{n:'ProgStatCode',t:'VARCHAR',d:'Status'},{n:'EnrolDate',t:'DATE',d:'Enrolment date'},{n:'ExitDate',t:'DATE',d:'Exit date'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.MemProg',gold:'risk.gold.programme_enrolments',relations:['MemProg.BenfcCode → CHFData.BenfcCode','MemProg.ProgCode → ProgMast.ProgCode'],tags:['ADRM','AI','programme','risk']},
+    {db:'i2core.dbo',name:'ProgMast',desc:'Programme master — all ADRM and clinical management programmes with their AI model version and clinical category.',cols:[{n:'ProgCode',t:'VARCHAR',d:'Programme (PK)'},{n:'ProgDescr',t:'VARCHAR',d:'Description'},{n:'ProgCat',t:'VARCHAR',d:'Clinical category'},{n:'AIModelVersion',t:'VARCHAR',d:'AI model version'}],sql:'SELECT *\nFROM i2core.dbo.ProgMast',gold:'ontology.shared.dmp_conditions',relations:['ProgMast → MemProg'],tags:['programme','AI','master']},
+    {db:'i2core.dbo',name:'ProgStatMast',desc:'Programme status master — active, inactive, suspended, risk-flagged, exited.',cols:[{n:'ProgStatCode',t:'VARCHAR',d:'Status (PK)'},{n:'ProgStatDescr',t:'VARCHAR',d:'Description'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.ProgStatMast',gold:'ontology.shared.auth_types',relations:['ProgStatMast → MemProg'],tags:['status','master','reference']},
+    {db:'i2core.dbo',name:'BenfcStatDisorder',desc:'AI-identified disorder flags per member per effective date. Char4Code is the ICD-10 chapter. EffDate/BenfcStatDisorderAsAt used for point-in-time ADRM risk reporting.',cols:[{n:'BenfcCode',t:'VARCHAR',d:'Member reference'},{n:'Char4Code',t:'VARCHAR',d:'ICD-10 chapter/disorder'},{n:'EffDate',t:'DATE',d:'Effective date'},{n:'BenfcStatDisorderAsAt',t:'DATE',d:'Assessment date'}],sql:"SELECT TOP 10 *\nFROM i2core.dbo.BenfcStatDisorder\n-- WHERE CONVERT(DATE,EffDate,111) >= '2025-01-01'\n-- AND CONVERT(DATE,BenfcStatDisorderAsAt,111) < '2025-09-30'",gold:'risk.gold.disorder_flags',relations:['BenfcStatDisorder.BenfcCode → CHFData.BenfcCode'],tags:['ADRM','AI','disorder','ICD10','risk'],gold_override:'risk.gold.disorder_flags'},
+  ]},
+  {id:'pharmacy',label:'Pharmacy (IPBM)',color:'#7c3aed',
+   op:'Pharmacy benefit management',opId:'pharmacy-benefit',
+   tables:[
+    {db:'i2dw.dbo',name:'MedsCompliance',desc:'Medicine compliance — MPR (Medication Possession Ratio) per member per NAPPI code. Derived weekly by SSIS from ClmLine (medicine lines) and IPBM_Members.',cols:[{n:'BenfcCode',t:'VARCHAR',d:'Member reference'},{n:'NappiCode',t:'VARCHAR',d:'NAPPI code'},{n:'MPR',t:'DECIMAL',d:'Medication Possession Ratio'},{n:'RefillDue',t:'DATE',d:'Expected refill'},{n:'LastRefill',t:'DATE',d:'Last actual refill'}],sql:'SELECT TOP 10 *\nFROM i2dw.dbo.MedsCompliance',gold:'pharmacy.gold.medicine_compliance',relations:['i2dw.MedsCompliance ← i2core.ClmLine (ServTypeCode=M) + IPBM_Members'],tags:['pharmacy','NAPPI','compliance','MPR'],i2dw:true},
+    {db:'i2dw.dbo',name:'IPBM_Authorisation',desc:'Pharmacy prior authorisation records. Derived daily from CaseBenfcCaseMan filtered to pharmacy auth type codes.',cols:[{n:'AuthNum',t:'VARCHAR',d:'Auth number (PK)'},{n:'BenfcCode',t:'VARCHAR',d:'Member'},{n:'NappiCode',t:'VARCHAR',d:'NAPPI code'},{n:'AuthDate',t:'DATE',d:'Auth date'},{n:'AuthStatus',t:'VARCHAR',d:'Status'},{n:'Scripts',t:'INT',d:'Authorised scripts'}],sql:'SELECT TOP 10 *\nFROM i2dw.dbo.IPBM_Authorisation',gold:'pharmacy.gold.authorisations',relations:['i2dw.IPBM_Authorisation ← i2core.CaseBenfcCaseMan + CaseAuthTypeMast'],tags:['IPBM','pharmacy','auth','NAPPI'],i2dw:true},
+    {db:'i2dw.dbo',name:'IPBM_Claims',desc:'Pharmacy dispensing claims. Joins ClmLine (medicine) with IPBM_Authorisation on BenfcCode+NappiCode.',cols:[{n:'ClmNum',t:'VARCHAR',d:'Claim reference'},{n:'AuthNum',t:'VARCHAR',d:'Auth FK'},{n:'BenfcCode',t:'VARCHAR',d:'Member'},{n:'NappiCode',t:'VARCHAR',d:'NAPPI'},{n:'Quantity',t:'DECIMAL',d:'Quantity'},{n:'AmtPaid',t:'MONEY',d:'Amount paid'},{n:'DispDate',t:'DATE',d:'Dispensing date'}],sql:'SELECT TOP 10 *\nFROM i2dw.dbo.IPBM_Claims',gold:'pharmacy.gold.dispensing_claims',relations:['i2dw.IPBM_Claims ← i2core.ClmLine + IPBM_Authorisation'],tags:['IPBM','pharmacy','dispensing'],i2dw:true},
+    {db:'i2dw.dbo',name:'IPBM_Members',desc:'IPBM member register — derived daily from CHFData (active members) + BenfcCriteria for chronic flags + ProgMast for formulary.',cols:[{n:'BenfcCode',t:'VARCHAR',d:'Member FK to CHFData'},{n:'ChronicFlag',t:'BIT',d:'Chronic eligible'},{n:'FormularyCode',t:'VARCHAR',d:'Formulary'},{n:'PharmBenefitLimit',t:'MONEY',d:'Benefit limit'}],sql:'SELECT TOP 10 *\nFROM i2dw.dbo.IPBM_Members',gold:'pharmacy.gold.members',relations:['i2dw.IPBM_Members ← i2core.CHFData + BenfcCriteria + ProgMast'],tags:['IPBM','member','formulary'],i2dw:true},
+  ]},
+  {id:'governance',label:'Clinical Governance',color:'#16a34a',
+   op:'Clinical decision support and care management',opId:'clinical-decision',
+   tables:[
+    {db:'i2core.dbo',name:'BenfcTreatPlan',desc:'Member treatment plan assignments — chronic and oncology. EffDate/EffTo used in Tier 2 treatment plan continuity recon checks.',cols:[{n:'BenfcCode',t:'VARCHAR',d:'Member'},{n:'TreatPlanCode',t:'VARCHAR',d:'Plan code'},{n:'EffDate',t:'DATE',d:'Effective date'},{n:'EffTo',t:'DATE',d:'End date'},{n:'PlanStatus',t:'VARCHAR',d:'Active/Inactive/Suspended'}],sql:"SELECT TOP 10 *\nFROM i2core.dbo.BenfcTreatPlan\nSELECT TreatPlanCode, COUNT(*) AS members\nFROM i2core.dbo.BenfcTreatPlan\nWHERE CONVERT(DATE,EffDate,111) >= '2025-01-01'\n  AND CONVERT(DATE,EffTo,111) < '2025-09-30'\nGROUP BY TreatPlanCode",gold:'clinical.gold.oncology_plans',relations:['BenfcTreatPlan.BenfcCode → CHFData.BenfcCode','BenfcTreatPlan.TreatPlanCode → TreatPlanMast.TreatPlanCode'],tags:['treatment plan','chronic','oncology']},
+    {db:'i2dw.dbo',name:'CondMast',desc:'Condition master in i2dw — derived weekly by SSIS from CriteriaMast + BenfcStatDisorder. Adds PMBFlag from CMS lookup. Used as ontology reference for DMP and recon benchmarks.',cols:[{n:'CondCode',t:'VARCHAR',d:'Condition (PK)'},{n:'CondDescr',t:'VARCHAR',d:'Description'},{n:'ICD10Code',t:'VARCHAR',d:'ICD-10'},{n:'ChronicFlag',t:'BIT',d:'Chronic indicator'},{n:'PMBFlag',t:'BIT',d:'PMB indicator'}],sql:'SELECT TOP 10 *\nFROM i2dw.dbo.CondMast',gold:'ontology.shared.dmp_conditions',relations:['i2dw.CondMast ← i2core.CriteriaMast + BenfcStatDisorder'],tags:['condition','ICD10','PMB','derived'],i2dw:true},
+  ]},
+  {id:'treatplan',label:'Treatment Plans & Formularies',color:'#9333ea',
+   op:'Clinical decision support and care management',opId:'clinical-decision',
+   tables:[
+    {db:'i2core.dbo',name:'TreatPlanMast',desc:'Treatment plan master — all approved chronic and oncology protocols with ICD-10 linkage, formulary reference and active flag.',cols:[{n:'TreatPlanCode',t:'VARCHAR',d:'Plan code (PK)'},{n:'TreatPlanDescr',t:'VARCHAR',d:'Description'},{n:'TreatPlanCat',t:'VARCHAR',d:'Category'},{n:'ICD10Code',t:'VARCHAR',d:'ICD-10'},{n:'FormularyRef',t:'VARCHAR',d:'Formulary reference'},{n:'ActiveFlag',t:'BIT',d:'Active'}],sql:'SELECT *\nFROM i2core.dbo.TreatPlanMast',gold:'ontology.shared.oncology_protocols',relations:['TreatPlanMast → BenfcTreatPlan','TreatPlanMast.ICD10Code → CondMast.ICD10Code'],tags:['treatment plan','formulary','oncology','chronic']},
+    {db:'i2core.dbo',name:'TreatPlanStatusMast',desc:'Status master for treatment plans — active, suspended, completed, expired, review-required.',cols:[{n:'TreatPlanStatCode',t:'VARCHAR',d:'Status (PK)'},{n:'TreatPlanStatDescr',t:'VARCHAR',d:'Description'}],sql:'SELECT TOP 10 *\nFROM i2core.dbo.TreatPlanStatusMast',gold:'ontology.shared.auth_types',relations:['TreatPlanStatusMast → BenfcTreatPlan'],tags:['status','master','treatment plan']},
+  ]},
+];
+
+let allTables=[];DOMAINS.forEach(d=>d.tables.forEach(t=>allTables.push({...t,domainId:d.id,domainLabel:d.label,domainColor:d.color,op:d.op,opId:d.opId})));
+
+const OP_MODEL = [
+  {id:'clinical-decision',  label:'Clinical decision support and care management', color:'#06b6d4'},
+  {id:'hospital-benefit',   label:'Hospital benefit management',                   color:'#dc2626'},
+  {id:'claims-adj',         label:'Clinical claims adjudication',                  color:'#0e7490'},
+  {id:'pharmacy-benefit',   label:'Pharmacy benefit management',                   color:'#7c3aed'},
+  {id:'provider-network',   label:'Provider network management',                   color:'#f59e0b',
+   fwaNotes:'FWA anomaly detection runs on this domain — provider billing patterns, code conflicts, peer benchmarks and syndicate links are the primary signals.'},
+  {id:'disease-risk',       label:'Disease and risk management programs',          color:'#d97706'},
+  {id:'membership-mgmt',    label:'Membership management and enrollment',          color:'#3b82f6',
+   fwaNotes:'FWA anomaly detection also monitors member behaviour — members who share providers with forensic-blocked practices or who appear in multiple claim chains simultaneously.'},
+];
+
+let selDomain='all',selAnalyst='all',selOp='all',searchQ='',viewMode='domain';
+let registry=[];
+
+function toast(msg,dur=3000){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
+
+// ── Render sidebar stats
+function renderStats(){
+  const i2dwCnt=allTables.filter(t=>t.i2dw).length;
+  document.getElementById('statGrid').innerHTML=`
+    <div class="stat"><div class="stat-val" style="color:var(--gold)">${DOMAINS.length}</div><div class="stat-lbl">Domains</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--bright)">${allTables.length}</div><div class="stat-lbl">Tables</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--gold)">${i2dwCnt}</div><div class="stat-lbl">i2dw derived</div></div>
+    <div class="stat"><div class="stat-val" style="color:#f87171">${registry.length}</div><div class="stat-lbl">Missing</div></div>
+  `;
+}
+
+// ── Render analyst filter pills
+function renderAnalysts(){
+  const wrap=document.getElementById('analystWrap');
+  wrap.innerHTML=['All',...ANALYSTS].map(a=>`<span class="a-pill${selAnalyst===a?' active':''}" onclick="selAna('${a}')">${a}</span>`).join('');
+}
+
+// ── Render domain nav
+function renderDomainNav(){
+  let html=`<div class="d-item${selDomain==='all'?' active':''}" onclick="selDom('all')">
+    <span class="d-dot" style="background:var(--sub)"></span>
+    <span class="d-label">All domains</span>
+    <span class="d-cnt">${allTables.length}</span>
+  </div>`;
+  DOMAINS.forEach(d=>{
+    html+=`<div class="d-item${selDomain===d.id?' active':''}" onclick="selDom('${d.id}')">
+      <span class="d-dot" style="background:${d.color}"></span>
+      <span class="d-label">${d.label}</span>
+      <span class="d-cnt">${d.tables.length}</span>
+    </div>`;
+  });
+  document.getElementById('domainNav').innerHTML=html;
+}
+
+// ── Operating model nav
+function renderOpNav(){
+  let html=`<div class="op-item${selOp==='all'?' active':''}" onclick="selOpFilter('all')">
+    <span class="op-item-label" style="color:var(--sub)">All capabilities</span>
+    <span class="op-item-cnt">${allTables.length}</span>
+  </div>`;
+  OP_MODEL.forEach(op=>{
+    const cnt=allTables.filter(t=>t.opId===op.id).length;
+    if(!cnt) return;
+    const fwaBadge=op.fwaNotes?`<span style="font-family:'JetBrains Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px;background:rgba(225,29,72,.12);color:#f87171;border:1px solid rgba(225,29,72,.25);white-space:nowrap;flex-shrink:0">FWA</span>`:'';
+    html+=`<div class="op-item${selOp===op.id?' active':''}" onclick="selOpFilter('${op.id}')">
+      <span class="op-item-label">${op.label}</span>
+      <span style="display:flex;align-items:center;gap:4px">${fwaBadge}<span class="op-item-cnt" style="color:${op.color}">${cnt}</span></span>
+    </div>`;
+  });
+  // FWA explanation note
+  html+=`<div style="margin-top:10px;padding:8px 12px;background:rgba(225,29,72,.06);border:1px solid rgba(225,29,72,.18);border-radius:4px;font-size:11px;line-height:1.6;color:#f87171">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;display:block;margin-bottom:3px;opacity:.6">FWA detection</span>
+    Anomaly detection across <strong style="color:var(--white)">Provider network</strong> (billing patterns, code conflicts, peer benchmarks, syndicates) and <strong style="color:var(--white)">Membership</strong> (members linked to blocked providers or duplicate claim chains). Not a standalone domain — it is a cross-cutting detection layer.
+  </div>`;
+  document.getElementById('opNav').innerHTML=html;
+}
+
+function selOpFilter(id){selOp=id;selDomain='all';renderOpNav();renderDomainNav();renderMain();}
+
+function setView(v){
+  viewMode=v;
+  document.getElementById('vbtn-domain').classList.toggle('active',v==='domain');
+  document.getElementById('vbtn-opmodel').classList.toggle('active',v==='opmodel');
+  renderMain();
+}
+
+// ── Operating model grouped view
+function renderByOpModel(){
+  const q=searchQ.toLowerCase();
+  let html='';let totalShown=0;
+  const opsToShow=selOp==='all'?OP_MODEL:OP_MODEL.filter(op=>op.id===selOp);
+  opsToShow.forEach(op=>{
+    let tables=allTables.filter(t=>t.opId===op.id);
+    if(q) tables=tables.filter(t=>t.name.toLowerCase().includes(q)||t.desc.toLowerCase().includes(q)||t.cols.some(c=>c.n.toLowerCase().includes(q))||(t.gold||'').toLowerCase().includes(q)||(t.tags||[]).some(g=>g.includes(q)));
+    if(!tables.length) return;
+    totalShown+=tables.length;
+    const cards=tables.map(t=>{
+      const d=DOMAINS.find(x=>x.id===t.domainId)||{color:'#888'};
+      const ic=(t.domainId||'').slice(0,2).toUpperCase();
+      return `<div class="tcard${t.i2dw?' i2dw-derived':''}" onclick="openDetail('${t.domainId}','${t.name}')">
+        <div class="tcard-head">
+          <div class="tcard-icon" style="background:${d.color}18;border:1px solid ${d.color}35;color:${d.color}">${ic}</div>
+          <div class="tcard-info">
+            <div class="tcard-dbpath">${t.db}</div>
+            <div class="tcard-name">${t.name}</div>
+          </div>
+          ${t.i2dw?'<div class="tcard-i2dw-badge">i2dw derived</div>':''}
+        </div>
+        <div class="tcard-body">
+          <div class="tcard-desc">${t.desc.slice(0,110)}${t.desc.length>110?'…':''}</div>
+          <div class="tcard-tags">${(t.tags||[]).slice(0,3).map(g=>`<span class="tag">${g}</span>`).join('')}<span class="tag" style="border-color:${d.color}30;color:${d.color}">${t.domainLabel}</span></div>
+          ${t.gold?`<div class="tcard-gold">${t.gold}</div>`:''}
+        </div>
+        <div class="tcard-foot">${t.cols.slice(0,5).map(c=>`<span class="col-chip">${c.n}</span>`).join('')}${t.cols.length>5?`<span class="col-chip">+${t.cols.length-5}</span>`:''}</div>
+      </div>`;
+    }).join('');
+    const fwaNote=op.fwaNotes?`<div style="margin-bottom:14px;padding:8px 12px;background:rgba(225,29,72,.06);border:1px solid rgba(225,29,72,.18);border-radius:3px;font-size:11px;color:#f87171;line-height:1.6"><span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.08em;opacity:.6">FWA detection layer — </span>${op.fwaNotes}</div>`:'';
+    html+=`<div class="op-group">
+      <div class="op-group-head"><span>${op.label}</span><span class="op-group-cnt">${tables.length} table${tables.length!==1?'s':''}</span></div>
+      ${fwaNote}
+      <div class="tgrid">${cards}</div>
+    </div>`;
+  });
+  if(!totalShown) html=`<div style="text-align:center;padding:60px;color:var(--dim);font-size:13px">No tables match.</div>`;
+  document.getElementById('domainSections').innerHTML=html;
+}
+
+function renderRegistry(){
+  const filtered=selAnalyst==='all'?registry:registry.filter(r=>r.analyst===selAnalyst);
+  const cnt=filtered.length;
+  document.getElementById('regCount').textContent=`${registry.length} submission${registry.length!==1?'s':''}${selAnalyst!=='all'?` · showing ${cnt} from ${selAnalyst}`:''}`;
+  if(!registry.length){document.getElementById('regBody').innerHTML='<div style="padding:14px 18px;font-size:12px;color:var(--dim)">No tables registered yet. If you used a table in the old system that isn\'t in the Lakehouse, click "I used this table" above.</div>';return;}
+  if(!filtered.length){document.getElementById('regBody').innerHTML=`<div style="padding:14px 18px;font-size:12px;color:var(--dim)">${selAnalyst} hasn't submitted any tables yet.</div>`;return;}
+  const rows=filtered.map(r=>`
+    <div class="reg-row">
+      <span class="reg-table">${r.table}</span>
+      <span class="reg-analyst">${r.analyst}</span>
+      <span style="font-size:11px;color:var(--sub)">${r.usage.slice(0,60)}${r.usage.length>60?'…':''}</span>
+      <span class="reg-status rs-missing">pending</span>
+      <span style="font-size:10px;color:var(--dim)">${r.ts}</span>
+    </div>`).join('');
+  document.getElementById('regBody').innerHTML=`
+    <div class="reg-row" style="background:var(--raised)">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim)">Table</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim)">Submitted by</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim)">Used for</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim)">Status</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim)">Submitted</span>
+    </div>${rows}`;
+}
+
+// ── Render main (dispatches to domain or op-model view)
+function renderMain(){
+  if(viewMode==='opmodel'){renderByOpModel();return;}
+  const q=searchQ.toLowerCase();
+  const domainsToShow=selDomain==='all'?DOMAINS:DOMAINS.filter(d=>d.id===selDomain);
+  let html='',total=0;
+  domainsToShow.forEach(d=>{
+    // apply op model filter if set
+    if(selOp!=='all'&&d.opId!==selOp) return;
+    const filtered=d.tables.filter(t=>{
+      if(!q) return true;
+      return t.name.toLowerCase().includes(q)||t.desc.toLowerCase().includes(q)||t.cols.some(c=>c.n.toLowerCase().includes(q))||(t.gold||'').toLowerCase().includes(q)||(t.tags||[]).some(g=>g.includes(q));
+    });
+    if(!filtered.length) return;
+    total+=filtered.length;
+    const i2dwCount=filtered.filter(t=>t.i2dw).length;
+    const opDef=OP_MODEL.find(o=>o.id===d.opId);
+    const opColor=opDef?.color||'var(--gold)';
+    const fwaNote=opDef?.fwaNotes
+      ?`<div style="margin-top:8px;padding:7px 12px;background:rgba(225,29,72,.06);border:1px solid rgba(225,29,72,.18);border-radius:3px;font-size:11px;color:#f87171;line-height:1.6"><span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.08em;opacity:.6">FWA detection layer — </span>${opDef.fwaNotes}</div>`
+      :'';
+    const cards=filtered.map(t=>{
+      const ic=(d.id||'').slice(0,2).toUpperCase();
+      return `<div class="tcard${t.i2dw?' i2dw-derived':''}" onclick="openDetail('${d.id}','${t.name}')">
+        <div class="tcard-head">
+          <div class="tcard-icon" style="background:${d.color}18;border:1px solid ${d.color}35;color:${d.color}">${ic}</div>
+          <div class="tcard-info">
+            <div class="tcard-dbpath">${t.db}</div>
+            <div class="tcard-name">${t.name}</div>
+          </div>
+          ${t.i2dw?'<div class="tcard-i2dw-badge">i2dw derived</div>':''}
+        </div>
+        <div class="tcard-body">
+          <div class="tcard-desc">${t.desc.slice(0,110)}${t.desc.length>110?'…':''}</div>
+          <div class="tcard-tags">${(t.tags||[]).slice(0,4).map(g=>`<span class="tag">${g}</span>`).join('')}</div>
+          ${t.gold?`<div class="tcard-gold">${t.gold}</div>`:''}
+          <div class="op-pill" style="border-color:${opColor}30;background:${opColor}09;color:${opColor}">⬡ ${d.op}</div>
+        </div>
+        <div class="tcard-foot">${t.cols.slice(0,5).map(c=>`<span class="col-chip">${c.n}</span>`).join('')}${t.cols.length>5?`<span class="col-chip">+${t.cols.length-5}</span>`:''}</div>
+      </div>`;
+    }).join('');
+    html+=`<div class="ds" id="ds-${d.id}">
+      <div class="ds-head">
+        <span class="ds-dot" style="background:${d.color}"></span>
+        <span class="ds-title">${d.label}</span>
+        ${i2dwCount?`<span class="ds-i2dw">⟳ ${i2dwCount} i2dw</span>`:''}
+        <span class="ds-badge">${filtered.length} table${filtered.length!==1?'s':''}</span>
+      </div>
+      <div class="op-banner"><span class="op-banner-lbl">Operating model</span><span style="color:${opColor}">${d.op}</span></div>
+      ${fwaNote}
+      <div class="tgrid">${cards}</div>
+    </div>`;
+  });
+  if(!total) html=`<div style="text-align:center;padding:60px;color:var(--dim);font-size:13px">No tables match the current filters.</div>`;
+  document.getElementById('domainSections').innerHTML=html;
+}
+
+// ── Open detail
+function openDetail(domainId,tableName){
+  const d=DOMAINS.find(x=>x.id===domainId);if(!d)return;
+  const t=d.tables.find(x=>x.name===tableName);if(!t)return;
+  document.getElementById('dp-db').textContent=t.db;
+  document.getElementById('dp-name').textContent=t.name;
+
+  const colsH=t.cols.map(c=>`<div class="dp-col"><span class="dp-col-n">${c.n}</span><span class="dp-col-t">${c.t}</span>${c.d?`<span class="dp-col-d">${c.d}</span>`:''}</div>`).join('');
+  const relH=(t.relations||[]).map(r=>`<div class="rel-item"><span class="rel-arrow">→</span>${r}</div>`).join('');
+
+  const lineage=I2DW_LINEAGE[t.name];
+  const lineageH=t.i2dw&&lineage?`<div class="dp-sec">
+    <div class="dp-sec-lbl">i2dw Lineage — how this table is built</div>
+    <div class="lineage-box">
+      <div><span class="proc">Job:</span> ${lineage.job}</div>
+      <div><span class="proc">Package:</span> ${lineage.package}</div>
+      <div><span class="proc">Stored proc:</span> ${lineage.proc}</div>
+      <div><span class="proc">Schedule:</span> ${lineage.schedule}</div>
+      <div><span class="proc">Source tables:</span> ${lineage.source_tables.join(' · ')}</div>
+      <div style="color:var(--body);margin-top:6px;font-family:'Space Grotesk',sans-serif;font-size:12px;line-height:1.7">${lineage.notes}</div>
+    </div>
+  </div>`:'';
+
+  const sqlF=(t.sql||'')
+    .replace(/\b(SELECT|FROM|WHERE|GROUP BY|ORDER BY|AND|OR|TOP|AS|CONVERT|DATE|COUNT|SUM|AVG|JOIN|LEFT|ON)\b/g,m=>`<span class="sql-kw">${m}</span>`)
+    .replace(/i2\w+\.dbo\.\w+/g,m=>`<span class="sql-tbl">${m}</span>`)
+    .replace(/--.+/g,m=>`<span class="sql-cmt">${m}</span>`);
+
+  document.getElementById('dp-body').innerHTML=`
+    <div class="dp-sec">
+      <div class="dp-sec-lbl">Description</div>
+      <div class="dp-desc">${t.desc}</div>
+    </div>
+    <div class="dp-sec">
+      <div class="dp-sec-lbl">Operating model capability</div>
+      <div class="op-detail-box">⬡ ${d.op}${d.fwaNotes?`<div style="margin-top:8px;padding:7px 10px;background:rgba(225,29,72,.08);border:1px solid rgba(225,29,72,.2);border-radius:3px;color:#f87171;font-size:11px;line-height:1.6"><span style="font-family:'JetBrains Mono',monospace;font-size:8px;opacity:.6;display:block;margin-bottom:2px">FWA detection layer</span>${d.fwaNotes}</div>`:''}
+      </div>
+    </div>
+    <div class="dp-sec">
+      <div class="dp-sec-lbl">Migration status</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${t.gold?`<span style="font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;border-radius:2px;background:rgba(100,216,251,.08);border:1px solid rgba(100,216,251,.2);color:var(--cyan)">In Lakehouse — mapped</span>`:`<span style="font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;border-radius:2px;background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.2);color:var(--gold)">Pending — register below if you need this</span>`}
+        ${t.i2dw?'<span class="tcard-i2dw-badge">i2dw derived</span>':''}
+      </div>
+    </div>
+    <div class="dp-sec">
+      <div class="dp-sec-lbl">Gold table mapping</div>
+      ${t.gold?`<div class="gold-box">→ ${t.gold}</div>`:`<div class="gold-box" style="color:var(--sub);border-color:var(--border)">Not yet mapped — register below</div>`}
+    </div>
+    ${lineageH}
+    <div class="dp-sec">
+      <div class="dp-sec-lbl">Columns <span style="color:var(--dim);font-size:9px;margin-left:4px">${t.cols.length} fields</span></div>
+      ${colsH}
+    </div>
+    ${relH?`<div class="dp-sec"><div class="dp-sec-lbl">Relationships</div>${relH}</div>`:''}
+    <div class="dp-sec">
+      <div class="dp-sec-lbl">Source SQL <button class="btn-copy" id="cpyBtn" onclick="cpySQL('${d.id}','${t.name}')">copy</button></div>
+      <div class="sql-block">${sqlF}</div>
+    </div>
+    <div class="dp-sec">
+      <div class="dp-sec-lbl">Tags</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${(t.tags||[]).map(g=>`<span class="col-chip">${g}</span>`).join('')}</div>
+    </div>
+  `;
+  document.getElementById('detailOverlay').classList.remove('hidden');
+  document.body.style.overflow='hidden';
+}
+
+function closeDetail(){document.getElementById('detailOverlay').classList.add('hidden');document.body.style.overflow='';}
+function handleOvClick(e){if(e.target===document.getElementById('detailOverlay'))closeDetail();}
+
+function cpySQL(dId,tName){
+  const d=DOMAINS.find(x=>x.id===dId);if(!d)return;
+  const t=d.tables.find(x=>x.name===tName);if(!t)return;
+  navigator.clipboard.writeText(t.sql||'').then(()=>{
+    const b=document.getElementById('cpyBtn');if(b){b.textContent='copied!';b.classList.add('copied');setTimeout(()=>{b.textContent='copy';b.classList.remove('copied');},2000);}
+  });
+}
+
+// ── Modal
+function openModal(){document.getElementById('modalBg').classList.remove('hidden');document.body.style.overflow='hidden';}
+function closeModal(){
+  document.getElementById('modalBg').classList.add('hidden');document.body.style.overflow='';
+  ['f-table','f-cols','f-usage','f-notes','f-etl'].forEach(id=>document.getElementById(id).value='');
+  ['f-db','f-analyst','f-domain','f-gold'].forEach(id=>document.getElementById(id).value='');
+}
+function handleModalClick(e){if(e.target===document.getElementById('modalBg'))closeModal();}
+
+function submitMissing(){
+  const table=document.getElementById('f-table').value.trim();
+  const analyst=document.getElementById('f-analyst').value;
+  const domain=document.getElementById('f-domain').value;
+  const usage=document.getElementById('f-usage').value.trim();
+  if(!table||!analyst||!domain||!usage){toast('Please fill in: Table name, Who are you, Domain and Usage description.');return;}
+  registry.push({
+    table,
+    db:document.getElementById('f-db').value,
+    analyst,domain,
+    cols:document.getElementById('f-cols').value,
+    usage,
+    gold:document.getElementById('f-gold').value,
+    etl:document.getElementById('f-etl').value,
+    notes:document.getElementById('f-notes').value,
+    ts:new Date().toISOString().slice(0,16).replace('T',' '),
+  });
+  closeModal();
+  renderRegistry();
+  renderAnalysts();
+  renderStats();
+  toast(`"${table}" registered by ${analyst}. Admin will review within 1 business day.`);
+}
+
+function selDom(id){selDomain=id;renderDomainNav();renderMain();}
+function selAna(a){
+  selAnalyst=a;
+  renderAnalysts();
+  // filter only the registry panel, not the ontology table cards
+  renderRegistry();
+}
+function filterTables(q){searchQ=q;renderMain();}
+
+// ── Render analysts — shows how many registry submissions each person has made
+function renderAnalysts(){
+  const wrap=document.getElementById('analystWrap');
+  if(!wrap) return;
+  const counts=registry.reduce((acc,r)=>{acc[r.analyst]=(acc[r.analyst]||0)+1;return acc;},{});
+  wrap.innerHTML=`<span class="a-pill${selAnalyst==='all'?' active':''}" onclick="selAna('all')">All (${registry.length})</span>`
+    +ANALYSTS.map(a=>{
+      const cnt=counts[a]||0;
+      return `<span class="a-pill${selAnalyst===a?' active':''}" onclick="selAna('${a}')">${a}${cnt?` <span style="opacity:.7">(${cnt})</span>`:''}`;
+    }).join('');
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDetail();closeModal();}});
+
+function selDom(id){selDomain=id;selOp='all';renderDomainNav();renderOpNav();renderMain();}
+function filterTables(q){searchQ=q;renderMain();}
+
+renderStats();renderAnalysts();renderDomainNav();renderOpNav();renderMain();renderRegistry();
+</script>
+</body>
+</html>
