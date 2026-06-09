@@ -816,40 +816,87 @@ function closeModal(){
 }
 function handleModalClick(e){if(e.target===document.getElementById('modalBg'))closeModal();}
 
-function submitMissing(){
-  const table=document.getElementById('f-table').value.trim();
-  const analyst=document.getElementById('f-analyst').value;
-  const domain=document.getElementById('f-domain').value;
-  const usage=document.getElementById('f-usage').value.trim();
-  if(!table||!analyst||!domain||!usage){toast('Please fill in: Table name, Who are you, Domain and Usage description.');return;}
-  registry.push({
-    table,
-    db:document.getElementById('f-db').value,
-    analyst,domain,
-    cols:document.getElementById('f-cols').value,
-    usage,
-    gold:document.getElementById('f-gold').value,
-    etl:document.getElementById('f-etl').value,
-    notes:document.getElementById('f-notes').value,
-    ts:new Date().toISOString().slice(0,16).replace('T',' '),
-  });
-  closeModal();
-  renderRegistry();
-  renderAnalysts();
-  renderStats();
-  toast(`"${table}" registered by ${analyst}. Admin will review within 1 business day.`);
+// ── API endpoint — update this to match your hosted server ───────────
+// Local Docker:  http://localhost:8000
+// Same server:   uses current hostname port 8000
+const API_BASE = 'https://commode-unranked-limes.ngrok-free.dev/';
+
+// ── Submit form → POST to API ──────────────────────────────────────
+async function submitMissing(){
+  const table  = document.getElementById('f-table').value.trim();
+  const analyst= document.getElementById('f-analyst').value;
+  const domain = document.getElementById('f-domain').value;
+  const usage  = document.getElementById('f-usage').value.trim();
+  if(!table||!analyst||!domain||!usage){
+    toast('Please fill in: Table name, Who are you, Domain and Usage description.');
+    return;
+  }
+  const btn = document.querySelector('.btn-submit');
+  const origText = btn.textContent;
+  btn.textContent='Submitting\u2026'; btn.disabled=true;
+  try {
+    const resp = await fetch(`${API_BASE}/submit`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        table_name:   table,
+        source_db:    document.getElementById('f-db').value,
+        analyst, domain,
+        key_columns:  document.getElementById('f-cols').value,
+        used_for:     usage,
+        gold_mapping: document.getElementById('f-gold').value,
+        etl_artefact: document.getElementById('f-etl').value,
+        notes:        document.getElementById('f-notes').value,
+      })
+    });
+    if(!resp.ok){const e=await resp.json().catch(()=>({detail:'error'}));throw new Error(e.detail);}
+    const data=await resp.json();
+    registry.push({id:data.id,table,db:document.getElementById('f-db').value,
+      analyst,domain,cols:document.getElementById('f-cols').value,
+      usage,gold:document.getElementById('f-gold').value,
+      etl:document.getElementById('f-etl').value,
+      notes:document.getElementById('f-notes').value,
+      ts:new Date().toISOString().slice(0,16).replace('T',' '),status:'pending'});
+    closeModal();renderRegistry();renderAnalysts();renderStats();
+    toast(`\u2713 "${table}" saved by ${analyst} \u2014 ID #${data.id}`);
+  } catch(err){
+    // Graceful fallback: save in-memory if API is unreachable
+    registry.push({table,db:document.getElementById('f-db').value,
+      analyst,domain,cols:document.getElementById('f-cols').value,
+      usage,gold:document.getElementById('f-gold').value,
+      etl:document.getElementById('f-etl').value,
+      notes:document.getElementById('f-notes').value,
+      ts:new Date().toISOString().slice(0,16).replace('T',' '),offline:true});
+    closeModal();renderRegistry();renderAnalysts();renderStats();
+    toast(`\u26a0 Saved locally (API offline) \u2014 "${table}" by ${analyst}`);
+  } finally {
+    btn.textContent=origText; btn.disabled=false;
+  }
 }
 
-function selDom(id){selDomain=id;renderDomainNav();renderMain();}
-function selAna(a){
-  selAnalyst=a;
-  renderAnalysts();
-  // filter only the registry panel, not the ontology table cards
-  renderRegistry();
+// ── Load all submissions from API when page opens ──────────────────
+async function loadSubmissions(){
+  try {
+    const resp=await fetch(`${API_BASE}/submissions`);
+    if(!resp.ok) return;
+    const data=await resp.json();
+    registry=(data.submissions||[]).map(r=>({
+      id:r.id, table:r.table_name, db:r.source_db||'',
+      analyst:r.analyst, domain:r.domain,
+      cols:r.key_columns||'', usage:r.used_for,
+      gold:r.gold_mapping||'', etl:r.etl_artefact||'',
+      notes:r.notes||'', status:r.status||'pending',
+      ts:(r.submitted_at||'').slice(0,16).replace('T',' '),
+    }));
+    renderRegistry();renderAnalysts();renderStats();
+  } catch(e){ console.warn('API not reachable:',e.message); }
 }
+
+function selDom(id){selDomain=id;selOp='all';renderDomainNav();renderOpNav();renderMain();}
+function selAna(a){selAnalyst=a;renderAnalysts();renderRegistry();}
 function filterTables(q){searchQ=q;renderMain();}
 
-// ── Render analysts — shows how many registry submissions each person has made
+// ── Render analysts pill strip ────────────────────────────────────
 function renderAnalysts(){
   const wrap=document.getElementById('analystWrap');
   if(!wrap) return;
@@ -862,11 +909,6 @@ function renderAnalysts(){
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDetail();closeModal();}});
-
-function selDom(id){selDomain=id;selOp='all';renderDomainNav();renderOpNav();renderMain();}
-function filterTables(q){searchQ=q;renderMain();}
-
 renderStats();renderAnalysts();renderDomainNav();renderOpNav();renderMain();renderRegistry();
+loadSubmissions();
 </script>
-</body>
-</html>
